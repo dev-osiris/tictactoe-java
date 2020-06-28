@@ -1,19 +1,19 @@
-package com.company;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Scanner;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.sql.*;
+import java.util.Date;
 
 public class ticTacToe {
-    public static void main(String[] args) {
+
+    public static void main(String[] args)  throws  Exception{
         Scanner reader = new Scanner(System.in);
         List<String> row1 = Arrays.asList(".", ".", ".");
         List<String> row2 = Arrays.asList(".", ".", ".");
         List<String> row3 = Arrays.asList(".", ".", ".");
         ArrayList<List<String>> arr;
         List<String> check  = new ArrayList<>();
-        int count = 0;
+        int count = 0, row_index;
         String var;
         System.out.println("\t\t\t\tTIC-TAC-TOE");
         printGrid(row1);
@@ -25,10 +25,9 @@ public class ticTacToe {
                 var = "x";
             else
                 var = "o";
-
-            System.out.println("turn of " + var);
+            System.out.println("turn of '" + var + "'");
             System.out.print("row: ");
-            int row_index = reader.nextInt();
+            row_index = reader.nextInt();
 
             System.out.print("column: ");
             int col_index = reader.nextInt();
@@ -60,21 +59,64 @@ public class ticTacToe {
             count += 1;
         }
         System.out.println("MATCH DRAW");
+        addToDatabase("", true);
     }
 
+    static void addToDatabase(String winner, boolean isDraw) throws  Exception{
+        String winQuery, drawQuery;
+        String URL = "jdbc:mysql://localhost:3306/tictactoe_db";
+        String PASSWORD = "NickelcoreSlimycanRockme";
+        String USERNAME = "root";
 
-    static ArrayList<List<String>> makeGrid(int row, int col, List<String> row1, List<String> row2, List<String> row3, String value ){
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        Date date = new Date();
+        DateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
+
+        winQuery = "INSERT INTO game_data VALUES(DEFAULT, 'WIN', ?, ?, ?)";
+        drawQuery = "INSERT INTO game_data VALUES(DEFAULT, 'DRAW', NULL, ?, ?)";
+
+        Class.forName("com.mysql.cj.jdbc.Driver");
+        try {
+            Connection con = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+            if(!isDraw) {
+                System.out.println("you won!\n");
+                System.out.println("adding result to database...");
+
+                PreparedStatement st = con.prepareStatement(winQuery);
+                st.setString(1, winner);
+                st.setString(2, dateFormat.format(date));
+                st.setString(3, timeFormat.format(date));
+                st.executeUpdate();
+                st.close();
+            }
+            else {                                                  //game resulted in draw
+                System.out.println("adding result to database...");
+                PreparedStatement st = con.prepareStatement(drawQuery);
+                st.setString(1, dateFormat.format(date));
+                st.setString(
+                        2, timeFormat.format(date));
+                st.executeUpdate();
+                st.close();
+            }
+            con.close();
+
+
+        }catch (SQLException e){
+            e.printStackTrace();
+        }
+        System.out.print("done\n");
+        System.exit(0);
+    }
+
+    static ArrayList<List<String>> makeGrid(int row, int col, List<String> row1, List<String> row2, List<String> row3, String value ) {
         ArrayList<List<String>> arr = new ArrayList<>();
-        if(row == 1){
+        if (row == 1) {
             row1.set(col - 1, value);
-        }
-        else if(row == 2){
+        } else if (row == 2) {
             row2.set(col - 1, value);
-        }
-        else if(row == 3){
+        } else if (row == 3) {
             row3.set(col - 1, value);
-        }
-        else
+        } else
             return null;
         arr.add(row1);
         arr.add(row2);
@@ -82,56 +124,48 @@ public class ticTacToe {
         return arr;
     }
 
+    static void horizontalMatching(List<String> firstRow, List<String> secondRow, List<String> thirdRow, String value) throws Exception {
 
-    static void horizontalMatching(List<String> firstRow, List<String> secondRow, List<String> thirdRow, String value){
         if (firstRow.get(0).equals(value) && firstRow.get(1).equals(value) && firstRow.get(2).equals(value))
         {
-            System.out.println("you won!");
-            System.exit(0);
+            addToDatabase(value, false);
         }
         if (secondRow.get(0).equals(value) && secondRow.get(1).equals(value) && secondRow.get(2).equals(value)){
 
-            System.out.println("you won!");
-            System.exit(0);
+            addToDatabase(value, false);
         }
 
         if (thirdRow.get(0).equals(value) && thirdRow.get(1).equals(value) && thirdRow.get(2).equals(value)){
 
-            System.out.println("you won!");
-            System.exit(0);
+            addToDatabase(value, false);
         }
     }
 
 
-    static void verticalMatching(List<String> firstRow, List<String> secondRow, List<String> thirdRow, String value){
+    static void verticalMatching(List<String> firstRow, List<String> secondRow, List<String> thirdRow, String value) throws Exception {
         if (firstRow.get(0).equals(value) && secondRow.get(0).equals(value) && thirdRow.get(0).equals(value)){
 
-            System.out.println("you won!");
-            System.exit(0);
+            addToDatabase(value, false);
         }
         if (firstRow.get(1).equals(value) && secondRow.get(1).equals(value) && thirdRow.get(1).equals(value)){
 
-            System.out.println("you won!");
-            System.exit(0);
+            addToDatabase(value, false);
         }
         if (firstRow.get(2).equals(value) && secondRow.get(2).equals(value) && thirdRow.get(2).equals(value)){
 
-            System.out.println("you won!");
-            System.exit(0);
+            addToDatabase(value, false);
         }
     }
 
 
-    static void diagonalMatching(List<String> firstRow, List<String> secondRow, List<String> thirdRow, String value){
+    static void diagonalMatching(List<String> firstRow, List<String> secondRow, List<String> thirdRow, String value) throws Exception {
         if (firstRow.get(0).equals(value) && secondRow.get(1).equals(value) && thirdRow.get(2).equals(value)){
 
-            System.out.println("you won!");
-            System.exit(0);
+            addToDatabase(value, false);
         }
         if (firstRow.get(2).equals(value) && secondRow.get(1).equals(value) && thirdRow.get(0).equals(value)){
 
-            System.out.println("you won!");
-            System.exit(0);
+            addToDatabase(value, false);
         }
     }
 
